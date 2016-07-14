@@ -1,0 +1,6 @@
+*~
+*.swp
+adb/*
+!adb/.gitkeep
+img/*
+!img/.gitkeep
