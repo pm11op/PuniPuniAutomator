@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, random, time
+import os, random, time, subprocess
 
 
 class Puni:
@@ -14,6 +14,7 @@ class Puni:
   macroName = 'macro.sh'
   _R = 0
   _SR = 0
+  _P = None
   _cmd = []
   _macro = []
   _swipeTrack = []
@@ -26,7 +27,12 @@ class Puni:
       os.system(cmd)  
     elif self.debug == 2:
       print cmd
-      
+
+  def touch(self, x, y):
+    cmdf = "adb shell input touchscreen tap %(x)d %(y)d"
+    cmd = cmdf % {'x': x, 'y': y}
+    self.execute(cmd)
+    
   def touchEvent(self):
     cmdf = """
 sendevent /dev/input/event5 1 330 1
@@ -160,11 +166,13 @@ sendevent /dev/input/event5 0 0 0
     cmd = 'adb push %(path)s%(macro)s /sdcard/' % {'path': self.macroPath, 'macro': self.macroName}
     self.execute(cmd)
 
+  def battleStart(self):
+    self.touch(650, 1300)
+    time.sleep(2)
+
   def doMacro(self):
-    cmd = 'adb shell sh /sdcard/%(macro)s' % {'macro': self.macroName}
-    self.execute(cmd)
-    
-import subprocess
+    self.battleStart()
+    self._P = subprocess.Popen(['adb', 'shell', 'sh /sdcard/%(macro)s' % {'macro': self.macroName}])  
 
 Puni = Puni()
 Puni.makeMacro()
