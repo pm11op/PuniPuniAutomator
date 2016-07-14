@@ -8,10 +8,14 @@ class Puni:
   _Y = (1030, 1350)
   swipeLength = 125
   swipeWeight = 4
+  macroNum = 1000
   screenShot = './img/ss.png'
+  macroPath = './adb/'
+  macroName = 'macro.sh'
   _R = 0
   _cmd = []
-
+  _macro = []
+    
   def execute(self, cmd):
     if self.debug == 0:
       os.system(cmd)  
@@ -22,12 +26,23 @@ class Puni:
       print cmd
       
   def touch(self):
-    cmdf = "adb shell input touchscreen tap %(x)d %(y)d"    
+    cmdf = """
+sendevent /dev/input/event5 1 330 1
+sendevent /dev/input/event5 3 58 1
+sendevent /dev/input/event5 3 53 %(x)d
+sendevent /dev/input/event5 3 54 %(y)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 330 0
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+"""[1:-1]
+
     x = random.randint(self._X[0], self._Y[0])
     y = random.randint(self._X[1], self._Y[1])
 
     cmd = cmdf % {'x': x, 'y': y}
-    self.execute(cmd)
+    self.intoMacro(cmd)
 
 
   ##
@@ -58,7 +73,7 @@ class Puni:
       return
     
     cmd = cmdf % {'x1': pos['x'], 'y1': pos['y'], 'x2': x2, 'y2': y2}
-    self.execute(cmd)
+    self.intoMacro(cmd)
 
     if self._R >= 9:
       self.swipe({'x': x2, 'y': y2})
@@ -67,7 +82,7 @@ class Puni:
   def isFinished(self):
     return False
 
-  def onLoopInit(self):
+  def genRNum(self):
     self._R = random.randint(0, 10)
 
   def takeScreenShot(self):
@@ -79,22 +94,48 @@ class Puni:
     self.execute(cmd1)
     self.execute(cmd2)
 
+  def intoMacro(self, cmd):
+    self._macro.append(cmd)
+    
+  def makeMacro(self):
+    self._macro = []
+    i = 0
+    while i < self.macroNum:
+      self.genRNum()
+#      self.swipe()
+      self.touch()
+      i += 1
+    txt = "\n".join(self._macro)
+    f = open(self.macroName, 'w')
+    f.write(txt)
+    f.close()
+    
+  def pushMacro(self):
+    cmd = 'adb push %(path)s%(macro)s /sdcard/' % {'path': self.macroPath, 'macro': self.macroName}
+    self.execute(cmd)
+
+  def doMacro(self):
+    cmd = 'adb shell sh /sdcard/%(macro)s' % {'macro': self.macroName}
+    self.execute(cmd)
     
 import subprocess
 
 Puni = Puni()
-p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
-while (1):
+Puni.makeMacro()
+Puni.pushMacro()
+Puni.doMacro()
+
+#while (1):
 #  Puni.takeScreenShot()
-  if p.poll() is 0 :
-    p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
-  continue
-  Puni.onLoopInit()
-  Puni.takeScreenShot()
-  if Puni.isFinished():
-    exit()
-  Puni.swipe()
-  Puni.touch()
-  time.sleep(0.08)
+#  Puni.genRNum()
+#  Puni.takeScreenShot()
+#  if Puni.isFinished():
+#    exit()
+#  time.sleep(0.08)
 #  time.sleep(1)
     
+# p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
+#  if p.poll() is 0 :
+#    p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
+#  continue
+  
