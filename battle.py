@@ -5,16 +5,18 @@ import os, random, time
 class Puni:
   debug = 1
   _X = (30, 1037)
-  _Y = (1030, 1350)
-  swipeLength = 125
-  swipeWeight = 4
+  _Y = (1030, 1550)
+  swipeLength = 50
+  swipeWeight = 2
   macroNum = 1000
   screenShot = './img/ss.png'
   macroPath = './adb/'
   macroName = 'macro.sh'
   _R = 0
+  _SR = 0
   _cmd = []
   _macro = []
+  _swipeTrack = []
     
   def execute(self, cmd):
     if self.debug == 0:
@@ -25,7 +27,7 @@ class Puni:
     elif self.debug == 2:
       print cmd
       
-  def touch(self):
+  def touchEvent(self):
     cmdf = """
 sendevent /dev/input/event5 1 330 1
 sendevent /dev/input/event5 3 58 1
@@ -48,42 +50,86 @@ sendevent /dev/input/event5 0 0 0
   ##
   #
   ##
-  def swipe(self, pos=None):
+  def swipeEvent(self, pos=None):
     if self._R < 7 :
       return
-    vector = 1
-    if self._R%2 == 0:
-      vector = -1
 
+    if self._SR == 7:
+      (vectorX, vectorY) = (-1, -1)
+    elif self._SR == 8:
+      (vectorX, vectorY) = (-1, 1)
+    elif self._SR == 9:
+      (vectorX, vectorY) = (1, 1)
+    elif self._SR == 10:
+      (vectorX, vectorY) = (1, -1)
+      
     if not pos:
+      self._swipeTrack = []
       pos = {}
       pos['x'] = random.randint(self._X[0], self._X[1])
       pos['y'] = random.randint(self._Y[0], self._Y[1])
-        
-    cmdf = "adb shell input touchscreen swipe %(x1)d %(y1)d %(x2)d %(y2)d"    
 
-    if vector > 0:
-      x2 = random.randint(min(self._X[1], max(self._X[0], pos['x'] + vector*self.swipeLength)), min(self._X[1], max(self._X[0], pos['x'] + vector*self.swipeLength*self.swipeWeight)))
-      y2 = random.randint(min(self._Y[1], max(self._Y[0], pos['y'] + vector*self.swipeLength)), min(self._Y[1], max(self._Y[0], pos['y'] + vector*self.swipeLength*self.swipeWeight)))
+      cmdf = """
+sendevent /dev/input/event5 1 330 1
+sendevent /dev/input/event5 3 58 1
+sendevent /dev/input/event5 1 330 1
+sendevent /dev/input/event5 3 58 1
+sendevent /dev/input/event5 3 53 %(x1)d
+sendevent /dev/input/event5 3 54 %(y1)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 3 53 %(x2)d
+sendevent /dev/input/event5 3 54 %(y2)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+"""[1:-1]
+      
     else:
-      x2 = random.randint(min(self._X[1], max(self._X[0], pos['x'] + vector*self.swipeLength*self.swipeWeight)), min(self._X[1], max(self._X[0], pos['x'] + vector*self.swipeLength)))
-      y2 = random.randint(min(self._Y[1], max(self._Y[0], pos['y'] + vector*self.swipeLength*self.swipeWeight)), min(self._Y[1], max(self._Y[0], pos['y'] + vector*self.swipeLength)))
+      cmdf = """
+sendevent /dev/input/event5 3 53 %(x2)d
+sendevent /dev/input/event5 3 54 %(y2)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+"""[1:-1]
 
-    if pos['x'] == x2 and pos['y'] == y2:
+    x2 = random.randint(min(self._X[1], max(self._X[0], min(pos['x'] + vectorX*self.swipeLength, pos['x'] + vectorX*self.swipeLength*self.swipeWeight))), min(self._X[1], max(self._X[0], max(pos['x'] + vectorX*self.swipeLength, pos['x'] + vectorX*self.swipeLength*self.swipeWeight))))
+    y2 = random.randint(min(self._Y[1], max(self._Y[0], min(pos['y'] + vectorY*self.swipeLength, pos['y'] + vectorY*self.swipeLength*self.swipeWeight))), min(self._Y[1], max(self._Y[0], max(pos['y'] + vectorY*self.swipeLength, pos['y'] + vectorY*self.swipeLength*self.swipeWeight))))
+
+#    print ('x', pos['x'], vectorX*self.swipeLength, x2)
+#    print ('y', pos['y'], vectorY*self.swipeLength, y2)    
+    
+    if pos['x'] == x2 and pos['y'] == y2 or pos['x'] in self._X or pos['y'] in self._Y :
+      self.swipeEnd()
       return
     
     cmd = cmdf % {'x1': pos['x'], 'y1': pos['y'], 'x2': x2, 'y2': y2}
-    self.intoMacro(cmd)
+    self._swipeTrack.append(cmd)
 
-    if self._R >= 9:
-      self.swipe({'x': x2, 'y': y2})
-        
+    if self._SR >= 9:
+      self.genSRNum()
+      self.swipeEvent({'x': x2, 'y': y2})
+    else:
+      self.swipeEnd()
+
+  def swipeEnd(self):
+    cmd = """
+sendevent /dev/input/event5 1 330 0
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+"""[1:-1]
+    self._swipeTrack.append(cmd)
+    cmd = "\n".join(self._swipeTrack)
+    self.intoMacro(cmd)
 
   def isFinished(self):
     return False
 
   def genRNum(self):
+    self.genSRNum()
     self._R = random.randint(0, 10)
+    
+  def genSRNum(self):
+    self._SR = random.randint(7, 10)
 
   def takeScreenShot(self):
 #    if self._R >= 3:
@@ -102,11 +148,11 @@ sendevent /dev/input/event5 0 0 0
     i = 0
     while i < self.macroNum:
       self.genRNum()
-#      self.swipe()
-      self.touch()
+      self.swipeEvent()
+      self.touchEvent()
       i += 1
     txt = "\n".join(self._macro)
-    f = open(self.macroName, 'w')
+    f = open(self.macroPath + self.macroName, 'w')
     f.write(txt)
     f.close()
     
