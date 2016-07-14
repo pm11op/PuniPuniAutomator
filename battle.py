@@ -8,7 +8,7 @@ class Puni:
   _Y = (1030, 1550)
   swipeLength = 50
   swipeWeight = 2
-  macroNum = 1000
+  macroNum = 300
   screenShot = './img/ss.png'
   macroPath = './adb/'
   macroName = 'macro.sh'
