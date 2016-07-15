@@ -50,10 +50,10 @@ sendevent /dev/input/event5 0 2 0
 sendevent /dev/input/event5 0 0 0
 """[1:-1]
 
-    x = random.randint(self._X[0], self._Y[0])
-    y = random.randint(self._X[1], self._Y[1])
-#    x = 612
-#    y = 1550
+#    x = random.randint(self._X[0], self._Y[0])
+#    y = random.randint(self._X[1], self._Y[1])
+    x = 412
+    y = 1600
     cmd = cmdf % {'x': x, 'y': y}
     self.intoMacro(cmd)
 
@@ -64,7 +64,39 @@ sendevent /dev/input/event5 0 0 0
   def swipeEvent(self, pos=None):
     if self._R < 7 :
       return
+    self.swipeSimple()
+#    self.swipeRandom(pos)
 
+  def swipeSimple(self):
+    cmdf = """
+sendevent /dev/input/event5 1 330 1
+sendevent /dev/input/event5 3 58 1
+sendevent /dev/input/event5 1 330 1
+sendevent /dev/input/event5 3 58 1
+sendevent /dev/input/event5 3 53 %(x1)d
+sendevent /dev/input/event5 3 54 %(y1)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 3 53 %(x2)d
+sendevent /dev/input/event5 3 54 %(y2)d
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 330 0
+sendevent /dev/input/event5 0 2 0
+sendevent /dev/input/event5 0 0 0
+"""[1:-1]
+    pattern = [((508, 1544), (497, 1656)),
+               ((470, 1548), (535, 1616)),
+               ((537, 1544), (497, 1609)),
+               ((462, 1632), (353, 1600)),
+               ((527, 1655), (708, 1629))]
+    p  = random.randint(0, len(pattern)-1)
+    cmd = cmdf % {'x1': pattern[p][0][0], 'y1': pattern[p][0][1], 'x2': pattern[p][1][0], 'y2': pattern[p][1][1]}
+    self.intoMacro(cmd)
+
+    
+    
+  def swipeRandom(self, pos=None):
     if self._SR == 7:
       (vectorX, vectorY) = (-1, -1)
     elif self._SR == 8:
@@ -118,7 +150,7 @@ sendevent /dev/input/event5 0 0 0
 
     if self._SR >= 9:
       self.genSRNum()
-      self.swipeEvent({'x': x2, 'y': y2})
+      self.swipeRandom({'x': x2, 'y': y2})
     else:
       self.swipeEnd()
 
@@ -176,7 +208,7 @@ sendevent /dev/input/event5 0 0 0
     self._SR = random.randint(7, 10)
 
   def takeScreenShot(self):
-    if self._R >= 3:
+    if self._R >= 2:
       return
     
     self._flag_fin = True
@@ -194,7 +226,7 @@ sendevent /dev/input/event5 0 0 0
     i = 0
     while i < self.macroNum:
       self.genRNum()
-#      self.swipeEvent()
+      self.swipeEvent()
       self.touchEvent()
       i += 1
     txt = "\n".join(self._macro)
