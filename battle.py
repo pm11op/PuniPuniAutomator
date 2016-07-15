@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, random, time, subprocess
+import os, random, time, subprocess, cv2
 
 
 class Puni:
@@ -18,6 +18,10 @@ class Puni:
   _cmd = []
   _macro = []
   _swipeTrack = []
+  _px_fin = [(18, 40), (533, 40), (1053, 40)]
+  _col_fin = [250, 213, 113] #BGR
+  _col_margin = 15
+  _flag_fin = False
     
   def execute(self, cmd):
     if self.debug == 0:
@@ -48,7 +52,8 @@ sendevent /dev/input/event5 0 0 0
 
     x = random.randint(self._X[0], self._Y[0])
     y = random.randint(self._X[1], self._Y[1])
-
+#    x = 612
+#    y = 1550
     cmd = cmdf % {'x': x, 'y': y}
     self.intoMacro(cmd)
 
@@ -128,8 +133,41 @@ sendevent /dev/input/event5 0 0 0
     self.intoMacro(cmd)
 
   def isFinished(self):
-    return False
+    if not self._flag_fin:
+      return False
+    
+    img = cv2.imread(self.screenShot)
+    for yx in self._px_fin:
+      pixelBGR = img[yx[1], yx[0]]
+      if not self.compareColor(pixelBGR):
+        return False
+    return True      
+#      print pixelBGR
+#      img[yx[1], yx[0]] = [0, 0, 0]
 
+#    cv2.imshow("Show Image", img)
+#    cv2.waitKey(0)
+#    cv2.destroyAllWindows()
+
+  def finish(self):
+    print 'battle finished!'
+    self._P.kill()
+    exit()
+    
+  def compareColor(self, col):
+    b = self._col_fin[0] - col[0]
+    if abs(b) > self._col_margin:
+      return False
+    g = self._col_fin[1] - col[1]
+    if abs(g) > self._col_margin:
+      return False
+    r = self._col_fin[2] - col[2]
+    if abs(r) > self._col_margin:
+      return False
+    return True
+    
+
+    
   def genRNum(self):
     self.genSRNum()
     self._R = random.randint(0, 10)
@@ -138,8 +176,10 @@ sendevent /dev/input/event5 0 0 0
     self._SR = random.randint(7, 10)
 
   def takeScreenShot(self):
-#    if self._R >= 3:
-#      return
+    if self._R >= 3:
+      return
+    
+    self._flag_fin = True
         
     cmd1 = 'adb shell screencap -p /sdcard/screen.png'
     cmd2 = 'adb pull /sdcard/screen.png %(imgpath)s' % {'imgpath': self.screenShot}
@@ -154,7 +194,7 @@ sendevent /dev/input/event5 0 0 0
     i = 0
     while i < self.macroNum:
       self.genRNum()
-      self.swipeEvent()
+#      self.swipeEvent()
       self.touchEvent()
       i += 1
     txt = "\n".join(self._macro)
@@ -168,28 +208,31 @@ sendevent /dev/input/event5 0 0 0
 
   def battleStart(self):
     self.touch(650, 1300)
-    time.sleep(2)
+    self._flag_fin = False
+    time.sleep(5)
 
   def doMacro(self):
     self.battleStart()
-    self._P = subprocess.Popen(['adb', 'shell', 'sh /sdcard/%(macro)s' % {'macro': self.macroName}])  
+    self._P = subprocess.Popen(['adb', 'shell', 'sh /sdcard/%(macro)s' % {'macro': self.macroName}])
+
+  def onLoop(self):
+    if self._P.poll() is 0:
+      print 'loop!!'
+      self._P = subprocess.Popen(['adb', 'shell', 'sh /sdcard/%(macro)s' % {'macro': self.macroName}])
 
 Puni = Puni()
 Puni.makeMacro()
 Puni.pushMacro()
 Puni.doMacro()
 
-#while (1):
-#  Puni.takeScreenShot()
-#  Puni.genRNum()
-#  Puni.takeScreenShot()
-#  if Puni.isFinished():
-#    exit()
-#  time.sleep(0.08)
-#  time.sleep(1)
-    
-# p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
-#  if p.poll() is 0 :
-#    p = subprocess.Popen(['adb', 'shell', 'sh /sdcard/touch.sh'])
-#  continue
+
+
+while (1):
+  Puni.onLoop()
+  Puni.genRNum()
+  Puni.takeScreenShot()
+  if Puni.isFinished():
+    Puni.finish()
+  
+  time.sleep(1)
   
