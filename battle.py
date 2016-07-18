@@ -24,7 +24,7 @@ class Puni:
   _col_margin_special = 25  
   _px_map = [(60, 1719), (218, 1719), (990, 1719)]
   _px_soul = (450, 1619)
-  _max_soul = 30
+  _max_soul = 10
   _cols_map = [(87, 225, 255), (87, 225, 255), (247, 203, 95)] #BGR  
   _col_margin = 15
   _flag_fin = False
@@ -43,6 +43,54 @@ class Puni:
   def touch(self, x, y):
     cmdf = "adb shell input touchscreen tap %(x)d %(y)d"
     cmd = cmdf % {'x': x, 'y': y}
+    self.execute(cmd)
+
+  def swipe(self, pos=None):
+    cmdf = """
+adb shell sendevent /dev/input/event5 1 330 1
+adb shell sendevent /dev/input/event5 3 58 1
+adb shell sendevent /dev/input/event5 3 53 %(x1)d
+adb shell sendevent /dev/input/event5 3 54 %(y1)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x2)d
+adb shell sendevent /dev/input/event5 3 54 %(y2)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x2)d
+adb shell sendevent /dev/input/event5 3 54 %(y2)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x3)d
+adb shell sendevent /dev/input/event5 3 54 %(y3)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x3)d
+adb shell sendevent /dev/input/event5 3 54 %(y3)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x4)d
+adb shell sendevent /dev/input/event5 3 54 %(y4)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x4)d
+adb shell sendevent /dev/input/event5 3 54 %(y4)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 3 53 %(x5)d
+adb shell sendevent /dev/input/event5 3 54 %(y5)d
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent /dev/input/event5 1 330 0
+adb shell sendevent /dev/input/event5 0 2 0
+adb shell sendevent /dev/input/event5 0 0 0
+"""[1:-1]
+    args = {'x1': pos['x1'], 'y1': pos['y1'], 'x5': pos['x2'], 'y5': pos['y2']}
+    for i in range(2, 5):
+      args['x'+str(i)] = args['x'+str(i-1)] + (pos['x2']-pos['x1'])/4
+      args['y'+str(i)] = args['y'+str(i-1)] + (pos['y2']-pos['y1'])/4
+    print args
+    cmd = cmdf % args      
     self.execute(cmd)
 
   # debugging purpose
@@ -90,16 +138,17 @@ class Puni:
 
   def goToMap(self):
     for i in range(0, 6):
+      time.sleep(4)      
       if self.isInMap():
+        Puni.sendSoul()
         exit()
-      
       self.touch(540, 1000)
       self.touch(540, 1100)
       self.touch(540, 1200)
       self.touch(540, 1300)
       self.touch(540, 1400)
       self.touch(540, 1500)
-      time.sleep(4)
+ 
     
     
   def compareColor(self, col1, col2, margin=None):
@@ -174,8 +223,12 @@ class Puni:
     return
   
   def searchEnemy(self, num):
-    for i in range(1, 9):
-      self.touch(i*100, 900 + num * 100)
+    if random.randint(0,1)==0 :
+      for i in range(1, 9):
+        self.touch(i*100, 900 + num * 100)
+    else:
+      for i in range(1, 10):
+        self.touch(1080 - i*100, 900 + num * 100)
 
   def isInBattleWaiting(self):
     Puni.takeScreenShot()
@@ -189,15 +242,32 @@ class Puni:
 
 
   def sendSoul(self):
+    if self._R >= 5:
+      return
     Puni.touch(self._px_soul[0], self._px_soul[1])
-    time.sleep(1)
-    Puni.touch(self._px_soul[0], self._px_soul[1])
-    Puni.touch(830, 640)
-    time.sleep(1)
-    Puni.touch(540, 1200)
+    time.sleep(2)
     
-#    for i in range(0, self._max_soul):
+    for i in range(0, self._max_soul):    
+      # send soul
+      Puni.touch(830, 640)
+      Puni.touch(830, 740)
+      Puni.touch(830, 840)
+      Puni.touch(830, 940)
+      Puni.touch(830, 1040)
+      Puni.touch(830, 1140)
+      Puni.touch(830, 1240)
+      time.sleep(2)
+
+      #OK
+      Puni.touch(540, 1000)
+      Puni.touch(540, 1050)
+      Puni.touch(540, 1100)      
+      time.sleep(2)    
+      Puni.swipe({'x1': 540, 'y1': 800, 'x2': 540, 'y2': 722})
+    
       
+    time.sleep(2)
+    Puni.touch(100, 1700)
     exit()
       
 if __name__ == "__main__":
@@ -208,7 +278,9 @@ if __name__ == "__main__":
 #  exit()
 #  Puni.goToMap()
 #  exit()
-  Puni.sendSoul()
+#  Puni.sendSoul()
+
+
   
   if Puni.isInMap():
     print 'in map'
@@ -232,5 +304,4 @@ if __name__ == "__main__":
     Puni.checkSpecialGage()
     if Puni.isFinished():
       Puni.finish()
-  
     time.sleep(2)
