@@ -1,10 +1,15 @@
 #!/usr/bin/python
 import os, random, time, subprocess, cv2
 
+from logging import getLogger,StreamHandler,DEBUG
+import logging.config
+logging.config.fileConfig('logging.conf')
+
+logger = getLogger(__name__)
+
 DIR = os.path.dirname(os.path.realpath(__file__))
 
 class Puni:
-  debug = 1
   _X = (30, 1037)
   _Y = (1030, 1550)
   swipeLength = 50
@@ -32,13 +37,9 @@ class Puni:
   img = []
     
   def execute(self, cmd):
-    if self.debug == 0:
-      os.system(cmd)  
-    elif self.debug == 1:
-      print cmd
-      os.system(cmd)  
-    elif self.debug == 2:
-      print cmd
+    logger.debug(cmd) 
+    os.system(cmd)  
+
 
   def touch(self, x, y):
     cmdf = "adb shell input touchscreen tap %(x)d %(y)d"
@@ -89,7 +90,6 @@ adb shell sendevent /dev/input/event5 0 0 0
     for i in range(2, 5):
       args['x'+str(i)] = args['x'+str(i-1)] + (pos['x2']-pos['x1'])/4
       args['y'+str(i)] = args['y'+str(i-1)] + (pos['y2']-pos['y1'])/4
-    print args
     cmd = cmdf % args      
     self.execute(cmd)
 
@@ -132,7 +132,7 @@ adb shell sendevent /dev/input/event5 0 0 0
 #    cv2.destroyAllWindows()
 
   def finish(self):
-    print 'battle finished!'
+    logger.info('battle finished!')
     self._P.kill()
     self.goToMap()
 
@@ -190,7 +190,7 @@ adb shell sendevent /dev/input/event5 0 0 0
 
   def doSpecial(self, num):
     self.touch(self._my_yokais[num][0], self._my_yokais[num][1])
-    print 'do special #%d' % num
+    logger.info( 'do special #%d' % num )
 
   def checkSpecialGage(self):
     if len(self.img) is 0:
@@ -217,7 +217,7 @@ adb shell sendevent /dev/input/event5 0 0 0
       self.img = cv2.imread(self.screenShot)
   
     if self._P.poll() is 0:
-      print 'loop!!'
+      logger.info('loop!!')
       self.doMacro()
 
     return
@@ -283,14 +283,14 @@ if __name__ == "__main__":
 
   
   if Puni.isInMap():
-    print 'in map'
+    logger.info('in map')
     i = 0
     while (i < 3):
       Puni.searchEnemy(i)
       i += 1
   
   if not Puni.isInBattleWaiting():
-    print 'not in battle waiting'
+    logger.info('not in battle waiting')
     exit()
   Puni.battleStart()
   Puni.doMacro()
