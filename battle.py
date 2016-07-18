@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import os, random, time, subprocess, cv2, shutil
+import os, random, time, subprocess, cv2
+from PIL import Image
 from datetime import datetime
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -188,7 +189,7 @@ adb shell sendevent /dev/input/event5 0 0 0
     self.execute(cmd2)
 
     file = self.screenShotLogDir + self.screenShotLogName % datetime.now().strftime('%Y%m%d%H%M%S')
-    shutil.copyfile(self.screenShot, file)
+    Image.open(self.screenShot).resize((270, 480)).save(file)
 
 
   def battleStart(self):
