@@ -1,13 +1,16 @@
 #!/usr/bin/python
-import os, random, time, subprocess, cv2
+import os, random, time, subprocess, cv2, shutil
+from datetime import datetime
+
+DIR = os.path.dirname(os.path.realpath(__file__))
 
 from logging import getLogger,StreamHandler,DEBUG
 import logging.config
-logging.config.fileConfig('logging.conf')
+logging.config.fileConfig('%s/logging.conf' % DIR)
 
 logger = getLogger(__name__)
 
-DIR = os.path.dirname(os.path.realpath(__file__))
+
 
 class Puni:
   _X = (30, 1037)
@@ -15,6 +18,8 @@ class Puni:
   swipeLength = 50
   macroNum = 300
   screenShot = '%s/img/ss.png' % DIR
+  screenShotLogDir = '%s/img/ss/' % DIR
+  screenShotLogName = '%s.png'
   playButton = '%s/img/play_button.png' % DIR
   macroPath = '%s/adb/' % DIR
   macroName = 'macro.sh'
@@ -135,13 +140,13 @@ adb shell sendevent /dev/input/event5 0 0 0
     logger.info('battle finished!')
     self._P.kill()
     self.goToMap()
+    self.sendSoul()
 
   def goToMap(self):
     for i in range(0, 6):
       time.sleep(4)      
       if self.isInMap():
-        Puni.sendSoul()
-        exit()
+        return
       self.touch(540, 1000)
       self.touch(540, 1100)
       self.touch(540, 1200)
@@ -181,6 +186,9 @@ adb shell sendevent /dev/input/event5 0 0 0
     cmd2 = 'adb pull /sdcard/screen.png %(imgpath)s' % {'imgpath': self.screenShot}
     self.execute(cmd1)
     self.execute(cmd2)
+
+    file = self.screenShotLogDir + self.screenShotLogName % datetime.now().strftime('%Y%m%d%H%M%S')
+    shutil.copyfile(self.screenShot, file)
 
 
   def battleStart(self):
@@ -242,7 +250,7 @@ adb shell sendevent /dev/input/event5 0 0 0
 
 
   def sendSoul(self):
-    if self._R >= 5:
+    if self._R >= 1:
       return
     Puni.touch(self._px_soul[0], self._px_soul[1])
     time.sleep(2)
@@ -268,7 +276,6 @@ adb shell sendevent /dev/input/event5 0 0 0
       
     time.sleep(2)
     Puni.touch(100, 1700)
-    exit()
       
 if __name__ == "__main__":
                         
@@ -304,4 +311,5 @@ if __name__ == "__main__":
     Puni.checkSpecialGage()
     if Puni.isFinished():
       Puni.finish()
+      exit()
     time.sleep(2)
