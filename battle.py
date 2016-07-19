@@ -33,10 +33,10 @@ class Puni:
   _col_fin = (250, 213, 113) #BGR
   _cols_special = [(62, 251, 226), (185, 254, 230), (78, 247, 218), (47, 255, 196), (151, 255, 237), (211, 255, 245), (57, 255, 214)] #BGR
   _col_margin_special = 25  
-  _px_map = [(60, 1719), (218, 1719), (990, 1719)]
+  _px_map = [(321, 1722), (555, 1722)]
   _px_soul = (450, 1619)
   _max_soul = 10
-  _cols_map = [(87, 225, 255), (87, 225, 255), (247, 203, 95)] #BGR  
+  _cols_map = [(246, 202, 93), (246, 202, 93)] #BGR  
   _col_margin = 15
   _flag_fin = False
   _my_yokais = [(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)]
@@ -147,6 +147,7 @@ adb shell sendevent /dev/input/event5 0 0 0
     for i in range(0, 6):
       time.sleep(4)      
       if self.isInMap():
+        logger.info('return to map')
         return
       self.touch(540, 1000)
       self.touch(540, 1100)
@@ -256,6 +257,8 @@ adb shell sendevent /dev/input/event5 0 0 0
     Puni.touch(self._px_soul[0], self._px_soul[1])
     time.sleep(2)
     
+    logger.info('start sending soul')
+    
     for i in range(0, self._max_soul):    
       # send soul
       Puni.touch(830, 640)
@@ -277,6 +280,7 @@ adb shell sendevent /dev/input/event5 0 0 0
       
     time.sleep(2)
     Puni.touch(100, 1700)
+    logger.info('end sending soul')
       
 if __name__ == "__main__":
                         
