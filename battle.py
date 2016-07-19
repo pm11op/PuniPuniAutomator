@@ -41,6 +41,7 @@ class Puni:
   _flag_fin = False
   _my_yokais = [(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)]
   img = []
+  _search_direction = 2  # 2->random, 1->LtoR, 0->RtoL
     
   def execute(self, cmd):
     logger.debug(cmd) 
@@ -233,7 +234,11 @@ adb shell sendevent /dev/input/event5 0 0 0
     return
   
   def searchEnemy(self, num):
-    if random.randint(0,1)==0 :
+    direction = self._search_direction
+    if self._search_direction is 2:
+      direction = random.randint(0,1)
+      
+    if direction is 1:
       for i in range(1, 9):
         self.touch(i*100, 900 + num * 100)
     else:
