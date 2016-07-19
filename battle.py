@@ -2,6 +2,7 @@
 import os, random, time, subprocess, cv2
 from PIL import Image
 from datetime import datetime
+from fysom import Fysom
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -286,10 +287,34 @@ adb shell sendevent /dev/input/event5 0 0 0
     time.sleep(2)
     Puni.touch(100, 1700)
     logger.info('end sending soul')
-      
+
+  def init(self, e):
+    print 'init'
+    
 if __name__ == "__main__":
-                        
   Puni = Puni()
+  
+  fsm = Fysom({ 'initial': 'init',
+                'events': [
+        {'name': 'goToMap', 'src': 'init', 'dst': 'map'},
+        {'name': 'goToMap', 'src': 'battle_waiting', 'dst': 'map'},
+        {'name': 'goToMap', 'src': 'battle', 'dst': 'map'},
+        {'name': 'goToMap', 'src': 'ranking', 'dst': 'map'},
+        {'name': 'searchEnemy', 'src': 'map', 'dst': 'battle_waiting'},
+        {'name': 'fight', 'src': 'battle_waiting', 'dst': 'battle'},
+        {'name': 'sendSoul', 'src': 'map', 'dst': 'ranking'},
+        {'name': 'panic', 'src': '*', 'dst': 'error'},
+        {'name': 'exit', 'src': 'map', 'dst': 'finish'}
+        ],
+                'callbacks': {'oninit': Puni.init,
+                              }})
+  fsm.goToMap()
+  fsm.searchEnemy()
+  fsm.fight()
+  fsm.goToMap()
+  fsm.exit()
+  exit()
+  
 
 #  Puni.getPixColor([(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)], False)
 #  exit()
