@@ -42,9 +42,10 @@ class Puni:
   _flag_fin = False
   _my_yokais = [(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)]
   img = []
-  _search_direction = 2  # 2->random, 1->LtoR, 0->RtoL
+  _search_direction = 0  # 2->random, 1->LtoR, 0->RtoL
   _FSM_BATTLE = 1  
   _FSM_RESULT = 2
+  _FSM_LOOSE = 3
 
   def execute(self, cmd):
     logger.debug(cmd) 
@@ -314,6 +315,8 @@ class PuniFSM:
   def on_init(self, e):
     logging.info('fsm:init')
     self.Puni.goToMap()
+    if not self.Puni.isInMap():
+      self.Puni.goToMap(src=self.Puni._FSM_LOOSE)
     
   def on_map(self, e):
     logging.info('fsm:map')
@@ -340,7 +343,7 @@ class PuniFSM:
       self.Puni.onLoop()
       self.Puni.genRNum()
       self.Puni.takeScreenShot()
-      self.Puni.checkSpecialGage()
+#      self.Puni.checkSpecialGage()
       if Puni.isFinished():
         return
       time.sleep(1)
