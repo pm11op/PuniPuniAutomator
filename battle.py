@@ -218,8 +218,10 @@ adb shell sendevent /dev/input/event5 0 0 0
     time.sleep(8)
 
   def doSpecial(self, num):
+    time.sleep(0.5)
     self.touch(self._my_yokais[num][0], self._my_yokais[num][1])
     logger.info( 'do special #%d' % num )
+    time.sleep(0.5)
 
   def checkSpecialGage(self):
     if len(self.img) is 0:
@@ -362,7 +364,7 @@ class PuniFSM:
     
   def panic(self, msg):
     logging.error(msg)
-    exit
+    exit()
     
 if __name__ == "__main__":
   Puni = Puni()
