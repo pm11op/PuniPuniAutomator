@@ -44,7 +44,8 @@ class Puni:
   img = []
   _search_direction = 2  # 2->random, 1->LtoR, 0->RtoL
   _FSM_BATTLE = 1  
-    
+  _FSM_RESULT = 2
+
   def execute(self, cmd):
     logger.debug(cmd) 
     os.system(cmd)  
@@ -140,25 +141,40 @@ adb shell sendevent /dev/input/event5 0 0 0
 #    cv2.waitKey(0)
 #    cv2.destroyAllWindows()
 
-  def finish(self):
+  def onBattleFinish(self):
     logger.info('battle finished!')
     self._P.kill()
-    self.goToMap()
-    self.sendSoul()
+#    self.goToMap()
+#    self.sendSoul()
 
-  def goToMap(self):
+  def _back(self):
+    cmd = 'adb shell input keyevent 4'
+    self.execute(cmd)
+
+  def _ok(self):
+    self.touch(540, 1000)
+    self.touch(540, 1100)
+    self.touch(540, 1200)
+    self.touch(540, 1300)
+    self.touch(540, 1400)
+    self.touch(540, 1500)
+    
+  def goToMap(self, src=None):
+    if self.isInMap():
+      logger.info('already in map')
+      return
+    
+    if not src:
+      method = self._back
+    else:
+      method = self._ok
+    
     for i in range(0, 6):
       time.sleep(4)      
       if self.isInMap():
         logger.info('return to map')
         return
-      self.touch(540, 1000)
-      self.touch(540, 1100)
-      self.touch(540, 1200)
-      self.touch(540, 1300)
-      self.touch(540, 1400)
-      self.touch(540, 1500)
- 
+      method()
     
     
   def compareColor(self, col1, col2, margin=None):
@@ -290,23 +306,75 @@ adb shell sendevent /dev/input/event5 0 0 0
     logger.info('end sending soul')
 
 class PuniFSM:
-  def init(self, e):
-    logging.info('init')
+  def __init__(self, Puni):
+    self.Puni = Puni
+    
+  def on_init(self, e):
+    logging.info('fsm:init')
+    self.Puni.goToMap()
+    
+  def on_map(self, e):
+    logging.info('fsm:map')
 
-  def finish(self, e):
-    logging.info('finish')
+  def on_search(self, e):
+    logging.info('fsm:search')
+    i=0
+    while (i < 3):
+      self.Puni.searchEnemy(i)
+      i += 1
+  
+    
+  def on_waiting(self, e):
+    logging.info('fsm:waiting')
+    if not self.Puni.isInBattleWaiting():
+      self.panic('not in battle waiting')
+    
+  def on_fight(self, e):
+    logging.info('fsm:fight')
+    self.Puni.doMacro()
+
+    i = 0  
+    while (i<150):
+      self.Puni.onLoop()
+      self.Puni.genRNum()
+      self.Puni.takeScreenShot()
+      self.Puni.checkSpecialGage()
+      if Puni.isFinished():
+        return
+      time.sleep(1)
+      i+=1
+      
+    self.panic('battle timeout')
+    
+
+  def on_battle(self, e):
+    logging.info('fsm:battle')
+    self.Puni.battleStart()
+    
+  def on_result(self, e):
+    logging.info('fsm:result')
+    self.Puni.onBattleFinish()
+    self.Puni.goToMap(src=self.Puni._FSM_RESULT)
+
+  def on_finish(self, e):
+    logging.info('fsm:finish')
     exit()
+    
+  def panic(self, msg):
+    logging.error(msg)
+    exit
     
 if __name__ == "__main__":
   Puni = Puni()
-  PFSM = PuniFSM()
+  PFSM = PuniFSM(Puni)
   fsm = Fysom({ 'initial': 'init',
                 'events': [
                   {'name': 'goToMap', 'src': 'init', 'dst': 'map'},
                   {'name': 'goToMap', 'src': 'battle_waiting', 'dst': 'map'},
                   {'name': 'goToMap', 'src': 'result', 'dst': 'map'},
                   {'name': 'goToMap', 'src': 'ranking', 'dst': 'map'},
-                  {'name': 'searchEnemy', 'src': 'map', 'dst': 'battle_waiting'},
+                  {'name': 'searchEnemy', 'src': 'map', 'dst': 'search'},
+                  {'name': 'waiting', 'src': 'search', 'dst': 'battle_waiting'},
                   {'name': 'fight', 'src': 'battle_waiting', 'dst': 'battle'},
                   {'name': 'showResult', 'src': 'battle', 'dst': 'result'},
                   {'name': 'sendSoul', 'src': 'map', 'dst': 'ranking'},
@@ -314,16 +382,23 @@ if __name__ == "__main__":
                   {'name': 'exit', 'src': 'map', 'dst': 'finish'}
                   ],
                 'callbacks': {
-                  'oninit': PFSM.init,
-                  'onfinish': PFSM.finish,
+                  'oninit': PFSM.on_init,
+                  'onmap': PFSM.on_map,
+                  'onsearchEnemy': PFSM.on_search,
+                  'onbattle_waiting': PFSM.on_waiting,
+                  'onfight': PFSM.on_fight,
+                  'onbattle': PFSM.on_battle,                  
+                  'onresult': PFSM.on_result,                  
+                  'onfinish': PFSM.on_finish,
               }})
   fsm.goToMap()
   fsm.searchEnemy()
+  fsm.waiting()
   fsm.fight()
   fsm.showResult()
-  fsm.goToMap(Puni._FSM_BATTLE)
-  fsm.sendSoul()
   fsm.goToMap()
+#  fsm.sendSoul()
+#  fsm.goToMap()
   fsm.exit()
   exit()
   
