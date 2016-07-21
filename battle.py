@@ -1,4 +1,20 @@
 #!/usr/bin/python
+__doc__ = """{f}
+
+Usage:
+    {f} [-l | --left] [-r | --right] [-x <x_coordinate>] [-y <y_coordinate>]
+    {f} -h | --help
+
+Options:
+    -l, --left          search an enemy from left to right
+    -r, --right         search an enemy from right to left
+    -x <X_COORDINATE>   x coordinate for an enemy
+    -y <Y_COORDINATE>   y coordinate for an enemy
+    -h --help           Show this screen and exit.
+""".format(f=__file__)
+
+from docopt import docopt
+
 import os, random, time, subprocess, cv2
 from PIL import Image
 from datetime import datetime
@@ -11,8 +27,6 @@ import logging.config
 logging.config.fileConfig('%s/logging.conf' % DIR)
 
 logger = getLogger(__name__)
-
-
 
 class Puni:
   _X = (30, 1037)
@@ -42,7 +56,8 @@ class Puni:
   _flag_fin = False
   _my_yokais = [(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)]
   img = []
-  _search_direction = 0  # 2->random, 1->LtoR, 0->RtoL
+  _search_direction = 2  # 2->random, 1->LtoR, 0->RtoL
+  _search_xy = None # search by xy coordinate 
   _FSM_BATTLE = 1  
   _FSM_RESULT = 2
   _FSM_LOOSE = 3
@@ -255,6 +270,10 @@ adb shell sendevent /dev/input/event5 0 0 0
     return
   
   def searchEnemy(self, num):
+    if self._search_xy:
+      self.touch(self._search_xy['x'], self._search_xy['y'])
+      return
+    
     direction = self._search_direction
     if self._search_direction is 2:
       direction = random.randint(0,1)
@@ -368,9 +387,22 @@ class PuniFSM:
   def panic(self, msg):
     logging.error(msg)
     exit()
+
+def parse(Puni):
+  args = docopt(__doc__)
+  if args['--left']:
+    Puni._search_direction = 1
+  elif args['--right']:
+    Puni._search_direction = 0
+  elif args['-x'] and args['-y']:
+    Puni._search_xy = {'x': int(args['-x']), 'y': int(args['-y'])}
+
     
 if __name__ == "__main__":
-  Puni = Puni()
+  Puni = Puni()  
+  args = parse(Puni)
+  
+
   PFSM = PuniFSM(Puni)
   fsm = Fysom({ 'initial': 'init',
                 'events': [
@@ -413,30 +445,3 @@ if __name__ == "__main__":
 #  Puni.goToMap()
 #  exit()
 #  Puni.sendSoul()
-
-
-  
-  if Puni.isInMap():
-    logger.info('in map')
-    i = 0
-    while (i < 3):
-      Puni.searchEnemy(i)
-      i += 1
-  
-  if not Puni.isInBattleWaiting():
-    logger.info('not in battle waiting')
-    exit()
-  Puni.battleStart()
-  Puni.doMacro()
-
-
-
-  while (1):
-    Puni.onLoop()
-    Puni.genRNum()
-    Puni.takeScreenShot()
-    Puni.checkSpecialGage()
-    if Puni.isFinished():
-      Puni.finish()
-      exit()
-    time.sleep(2)
