@@ -36,7 +36,8 @@ class Puni:
   screenShot = '%s/img/ss.png' % DIR
   screenShotLogDir = '%s/img/ss/' % DIR
   screenShotLogName = '%s.png'
-  playButton = '%s/img/play_button.png' % DIR
+  _img_playButton = '%s/img/play_button.png' % DIR
+  _img_noSoul = '%s/img/soul_0_gray.png' % DIR
   macroPath = '%s/adb/' % DIR
   macroName = 'macro.sh'
   _R = 0
@@ -50,7 +51,7 @@ class Puni:
   _col_margin_special = 25  
   _px_map = [(321, 1722), (555, 1722)]
   _px_soul = (450, 1619)
-  _max_soul = 10
+  _max_soul = 30
   _cols_map = [(246, 202, 93), (246, 202, 93)] #BGR  
   _col_margin = 15
   _flag_fin = False
@@ -272,6 +273,7 @@ adb shell sendevent /dev/input/event5 0 0 0
   def searchEnemy(self, num):
     if self._search_xy:
       self.touch(self._search_xy['x'], self._search_xy['y'])
+      time.sleep(4)
       return
     
     direction = self._search_direction
@@ -288,17 +290,30 @@ adb shell sendevent /dev/input/event5 0 0 0
   def isInBattleWaiting(self):
     Puni.takeScreenShot()
     img = cv2.imread(self.screenShot)   
-    playButton = cv2.imread(self.playButton)
+    playButton = cv2.imread(self._img_playButton)
     res = cv2.matchTemplate(img, playButton, cv2.TM_SQDIFF)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     if min_val < 540000000:
       return True
+    logger.debug('waiting template match', min_val)
     return False
 
+  def isNoSoul(self):
+    Puni.takeScreenShot()
+    img = cv2.imread(self.screenShot, cv2.IMREAD_GRAYSCALE)   
+    
+    method = cv2.TM_CCOEFF
+    needle  = cv2.imread(self._img_noSoul, cv2.IMREAD_GRAYSCALE)
+    w, h = needle.shape[::-1]
+    res = cv2.matchTemplate(img, needle, method)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+#    print (min_val, max_val, min_loc, max_loc)
 
+    if max_val > 26210000 and max_val < 26220000:
+      logger.debug('no soul template match', (min_val, max_val, min_loc, max_loc))
+      return True
+    
   def sendSoul(self):
-    if self._R >= 1:
-      return
     Puni.touch(self._px_soul[0], self._px_soul[1])
     time.sleep(2)
     
@@ -343,6 +358,10 @@ class PuniFSM:
   def on_search(self, e):
     logging.info('fsm:search')
     i=0
+    if self.Puni.isNoSoul():
+      self.panic('no soul')
+      return
+    
     while (i < 3):
       self.Puni.searchEnemy(i)
       i += 1
@@ -365,7 +384,7 @@ class PuniFSM:
 #      self.Puni.checkSpecialGage()
       if Puni.isFinished():
         return
-      time.sleep(1)
+      time.sleep(0.8)
       i+=1
       
     self.panic('battle timeout')
@@ -384,6 +403,10 @@ class PuniFSM:
     logging.info('fsm:finish')
     exit()
     
+  def on_ranking(self, e):
+    logging.info('fsm:ranking')
+    self.Puni.sendSoul()
+    
   def panic(self, msg):
     logging.error(msg)
     exit()
@@ -401,7 +424,10 @@ def parse(Puni):
 if __name__ == "__main__":
   Puni = Puni()  
   args = parse(Puni)
-  
+
+#  if Puni.isNoSoul():
+#    print 'no soul'
+#  exit()
 
   PFSM = PuniFSM(Puni)
   fsm = Fysom({ 'initial': 'init',
@@ -425,10 +451,15 @@ if __name__ == "__main__":
                   'onbattle_waiting': PFSM.on_waiting,
                   'onfight': PFSM.on_fight,
                   'onbattle': PFSM.on_battle,                  
+                  'onranking': PFSM.on_ranking,                  
                   'onresult': PFSM.on_result,                  
                   'onfinish': PFSM.on_finish,
               }})
   fsm.goToMap()
+  if random.randint(0, 20) is 0:
+    fsm.sendSoul()
+    fsm.goToMap()    
+    fsm.exit()
   fsm.searchEnemy()
   fsm.waiting()
   fsm.fight()
