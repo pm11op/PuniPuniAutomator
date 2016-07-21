@@ -310,7 +310,7 @@ adb shell sendevent /dev/input/event5 0 0 0
 #    print (min_val, max_val, min_loc, max_loc)
 
     if max_val > 26210000 and max_val < 26220000:
-      logger.debug('no soul template match', (min_val, max_val, min_loc, max_loc))
+      logger.warning('no soul template match', (min_val, max_val, min_loc, max_loc))
       return True
     
   def sendSoul(self):
