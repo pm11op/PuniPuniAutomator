@@ -342,12 +342,46 @@ adb shell sendevent /dev/input/event5 0 0 0
     Puni.touch(100, 1700)
     logger.info('end sending soul')
 
+  def isAlive(self):
+    ret = subprocess.check_output(['adb', 'shell', 'ps', 'com.Level5.YWP'])
+    if ret.find('com.Level5.YWP') > -1:
+      return True
+    return False
+
+    
+  def startApp(self):
+    logger.info('starting app')
+    i=0
+    subprocess.call(['adb', 'shell', 'am', 'start', '-n', 'com.Level5.YWP/com.example.sgf.MainActivity'])
+    while (i<10):
+      if self.isAlive():
+        break
+      time.sleep(1)
+      i+=1
+    time.sleep(10)
+    self.touch(540, 960)
+    time.sleep(4)
+    self.touch(540, 960)
+    time.sleep(4)
+    self.touch(780, 1650)
+    time.sleep(10)
+
+
+
 class PuniFSM:
   def __init__(self, Puni):
     self.Puni = Puni
     
   def on_init(self, e):
     logging.info('fsm:init')
+    if not self.Puni.isAlive():
+      logging.info('Puni is not running')
+      self.Puni.startApp()
+      
+      if not self.Puni.isAlive():
+        self.panic('Puni is never2 running')
+  
+      
     self.Puni.goToMap()
     if not self.Puni.isInMap():
       self.Puni.goToMap(src=self.Puni._FSM_LOOSE)
@@ -422,7 +456,7 @@ def parse(Puni):
 
     
 if __name__ == "__main__":
-  Puni = Puni()  
+  Puni = Puni()
   args = parse(Puni)
 
 #  if Puni.isNoSoul():
