@@ -39,6 +39,7 @@ class Puni:
   _img_playButton = '%s/img/play_button.png' % DIR
   _img_noSoul = '%s/img/soul_0_gray.png' % DIR
   macroPath = '%s/adb/' % DIR
+  _device = '/dev/input/event5'
   macroName = 'macro.sh'
   _R = 0
   _SR = 0
@@ -75,45 +76,45 @@ class Puni:
 
   def swipe(self, pos=None):
     cmdf = """
-adb shell sendevent /dev/input/event5 1 330 1
-adb shell sendevent /dev/input/event5 3 58 1
-adb shell sendevent /dev/input/event5 3 53 %(x1)d
-adb shell sendevent /dev/input/event5 3 54 %(y1)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x2)d
-adb shell sendevent /dev/input/event5 3 54 %(y2)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x2)d
-adb shell sendevent /dev/input/event5 3 54 %(y2)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x3)d
-adb shell sendevent /dev/input/event5 3 54 %(y3)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x3)d
-adb shell sendevent /dev/input/event5 3 54 %(y3)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x4)d
-adb shell sendevent /dev/input/event5 3 54 %(y4)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x4)d
-adb shell sendevent /dev/input/event5 3 54 %(y4)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 3 53 %(x5)d
-adb shell sendevent /dev/input/event5 3 54 %(y5)d
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
-adb shell sendevent /dev/input/event5 1 330 0
-adb shell sendevent /dev/input/event5 0 2 0
-adb shell sendevent /dev/input/event5 0 0 0
+adb shell sendevent %(device)s 1 330 1
+adb shell sendevent %(device)s 3 58 1
+adb shell sendevent %(device)s 3 53 %(x1)d
+adb shell sendevent %(device)s 3 54 %(y1)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x2)d
+adb shell sendevent %(device)s 3 54 %(y2)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x2)d
+adb shell sendevent %(device)s 3 54 %(y2)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x3)d
+adb shell sendevent %(device)s 3 54 %(y3)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x3)d
+adb shell sendevent %(device)s 3 54 %(y3)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x4)d
+adb shell sendevent %(device)s 3 54 %(y4)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x4)d
+adb shell sendevent %(device)s 3 54 %(y4)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 3 53 %(x5)d
+adb shell sendevent %(device)s 3 54 %(y5)d
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
+adb shell sendevent %(device)s 1 330 0
+adb shell sendevent %(device)s 0 2 0
+adb shell sendevent %(device)s 0 0 0
 """[1:-1]
-    args = {'x1': pos['x1'], 'y1': pos['y1'], 'x5': pos['x2'], 'y5': pos['y2']}
+    args = {'x1': pos['x1'], 'y1': pos['y1'], 'x5': pos['x2'], 'y5': pos['y2'], 'device': self._device}
     for i in range(2, 5):
       args['x'+str(i)] = args['x'+str(i-1)] + (pos['x2']-pos['x1'])/4
       args['y'+str(i)] = args['y'+str(i-1)] + (pos['y2']-pos['y1'])/4
@@ -415,8 +416,7 @@ class PuniFSM:
       self.Puni.onLoop()
       self.Puni.genRNum()
       self.Puni.takeScreenShot()
-#      self.Puni.checkSpecialGage()
-      if Puni.isFinished():
+      if self.Puni.isFinished():
         return
       time.sleep(0.8)
       i+=1
