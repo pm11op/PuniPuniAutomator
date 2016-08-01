@@ -373,9 +373,9 @@ class PuniFSM:
     self.Puni = Puni
     
   def on_init(self, e):
-    logging.info('fsm:init')
+    logger.info('fsm:init')
     if not self.Puni.isAlive():
-      logging.info('Puni is not running')
+      logger.warning('Puni is not running')
       self.Puni.startApp()
       
       if not self.Puni.isAlive():
@@ -387,10 +387,10 @@ class PuniFSM:
       self.Puni.goToMap(src=self.Puni._FSM_LOOSE)
     
   def on_map(self, e):
-    logging.info('fsm:map')
+    logger.info('fsm:map')
 
   def on_search(self, e):
-    logging.info('fsm:search')
+    logger.info('fsm:search')
     i=0
     if self.Puni.isNoSoul():
       self.panic('no soul')
@@ -402,12 +402,12 @@ class PuniFSM:
   
     
   def on_waiting(self, e):
-    logging.info('fsm:waiting')
+    logger.info('fsm:waiting')
     if not self.Puni.isInBattleWaiting():
       self.panic('not in battle waiting')
     
   def on_fight(self, e):
-    logging.info('fsm:fight')
+    logger.info('fsm:fight')
     self.Puni.doMacro()
 
     i = 0  
@@ -425,24 +425,24 @@ class PuniFSM:
     
 
   def on_battle(self, e):
-    logging.info('fsm:battle')
+    logger.info('fsm:battle')
     self.Puni.battleStart()
     
   def on_result(self, e):
-    logging.info('fsm:result')
+    logger.info('fsm:result')
     self.Puni.onBattleFinish()
     self.Puni.goToMap(src=self.Puni._FSM_RESULT)
 
   def on_finish(self, e):
-    logging.info('fsm:finish')
+    logger.info('fsm:finish')
     exit()
     
   def on_ranking(self, e):
-    logging.info('fsm:ranking')
+    logger.info('fsm:ranking')
     self.Puni.sendSoul()
     
   def panic(self, msg):
-    logging.error(msg)
+    logger.error(msg)
     exit()
 
 def parse(Puni):
