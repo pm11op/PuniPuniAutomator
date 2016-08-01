@@ -123,7 +123,7 @@ adb shell sendevent /dev/input/event5 0 0 0
   # debugging purpose
   def getPixColor(self, xys=[(0, 0)], takeSS=True):
     if takeSS:
-      Puni.takeScreenShot()
+      self.takeScreenShot()
     img = cv2.imread(self.screenShot)   
     for xy in xys:
       print img[xy[1], xy[0]]
@@ -133,7 +133,7 @@ adb shell sendevent /dev/input/event5 0 0 0
       
 
   def isInMap(self):
-    Puni.takeScreenShot()
+    self.takeScreenShot()
     img = cv2.imread(self.screenShot)    
     for i, yx in enumerate(self._px_map):
       pixelBGR = img[yx[1], yx[0]]
@@ -288,7 +288,7 @@ adb shell sendevent /dev/input/event5 0 0 0
         self.touch(1080 - i*100, 900 + num * 100)
 
   def isInBattleWaiting(self):
-    Puni.takeScreenShot()
+    self.takeScreenShot()
     img = cv2.imread(self.screenShot)   
     playButton = cv2.imread(self._img_playButton)
     res = cv2.matchTemplate(img, playButton, cv2.TM_SQDIFF)
@@ -299,7 +299,7 @@ adb shell sendevent /dev/input/event5 0 0 0
     return False
 
   def isNoSoul(self):
-    Puni.takeScreenShot()
+    self.takeScreenShot()
     img = cv2.imread(self.screenShot, cv2.IMREAD_GRAYSCALE)   
     
     method = cv2.TM_CCOEFF
@@ -314,32 +314,32 @@ adb shell sendevent /dev/input/event5 0 0 0
       return True
     
   def sendSoul(self):
-    Puni.touch(self._px_soul[0], self._px_soul[1])
+    self.touch(self._px_soul[0], self._px_soul[1])
     time.sleep(2)
     
     logger.info('start sending soul')
     
     for i in range(0, self._max_soul):    
       # send soul
-      Puni.touch(830, 640)
-      Puni.touch(830, 740)
-      Puni.touch(830, 840)
-      Puni.touch(830, 940)
-      Puni.touch(830, 1040)
-      Puni.touch(830, 1140)
-      Puni.touch(830, 1240)
+      self.touch(830, 640)
+      self.touch(830, 740)
+      self.touch(830, 840)
+      self.touch(830, 940)
+      self.touch(830, 1040)
+      self.touch(830, 1140)
+      self.touch(830, 1240)
       time.sleep(2)
 
       #OK
-      Puni.touch(540, 1000)
-      Puni.touch(540, 1050)
-      Puni.touch(540, 1100)      
+      self.touch(540, 1000)
+      self.touch(540, 1050)
+      self.touch(540, 1100)      
       time.sleep(2)    
-      Puni.swipe({'x1': 540, 'y1': 800, 'x2': 540, 'y2': 722})
+      self.swipe({'x1': 540, 'y1': 800, 'x2': 540, 'y2': 722})
     
       
     time.sleep(2)
-    Puni.touch(100, 1700)
+    self.touch(100, 1700)
     logger.info('end sending soul')
 
   def isAlive(self):
@@ -454,16 +454,11 @@ def parse(Puni):
   elif args['-x'] and args['-y']:
     Puni._search_xy = {'x': int(args['-x']), 'y': int(args['-y'])}
 
-    
-if __name__ == "__main__":
-  Puni = Puni()
-  args = parse(Puni)
+def main():
+  puni = Puni()
+  args = parse(puni)
 
-#  if Puni.isNoSoul():
-#    print 'no soul'
-#  exit()
-
-  PFSM = PuniFSM(Puni)
+  PFSM = PuniFSM(puni)
   fsm = Fysom({ 'initial': 'init',
                 'events': [
                   {'name': 'goToMap', 'src': 'init', 'dst': 'map'},
@@ -499,14 +494,9 @@ if __name__ == "__main__":
   fsm.fight()
   fsm.showResult()
   fsm.goToMap()
-#  fsm.sendSoul()
-#  fsm.goToMap()
   fsm.exit()
-  exit()
+  return
   
+if __name__ == "__main__":
+  main()  
 
-#  Puni.getPixColor([(175, 614), (373, 558), (590, 540), (801, 560), (1019, 616)], False)
-#  exit()
-#  Puni.goToMap()
-#  exit()
-#  Puni.sendSoul()
